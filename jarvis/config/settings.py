@@ -51,6 +51,13 @@ class WebSettings(BaseModel):
     port: int = 8765
 
 
+class BotSettings(BaseModel):
+    #: Which chat platform to run. Currently "telegram".
+    platform: str = "telegram"
+    #: Long-poll timeout (seconds) for fetching updates.
+    poll_timeout: int = 30
+
+
 class AssistantSettings(BaseModel):
     name: str = "Jarvis"
     persona: str = "You are Jarvis, a concise and capable assistant."
@@ -61,6 +68,7 @@ class Settings(BaseModel):
     skills: SkillsSettings = Field(default_factory=SkillsSettings)
     voice: VoiceSettings = Field(default_factory=VoiceSettings)
     web: WebSettings = Field(default_factory=WebSettings)
+    bot: BotSettings = Field(default_factory=BotSettings)
     assistant: AssistantSettings = Field(default_factory=AssistantSettings)
     data_dir: Path = Field(default_factory=lambda: _default_data_dir())
 
@@ -100,7 +108,7 @@ def _env_overrides() -> dict:
     Only known top-level sections are considered so unrelated JARVIS_* vars
     (like JARVIS_EMAIL, a secret) are ignored here.
     """
-    sections = {"llm", "skills", "voice", "web", "assistant"}
+    sections = {"llm", "skills", "voice", "web", "bot", "assistant"}
     overrides: dict[str, dict] = {}
     for env_key, value in os.environ.items():
         if not env_key.startswith("JARVIS_"):

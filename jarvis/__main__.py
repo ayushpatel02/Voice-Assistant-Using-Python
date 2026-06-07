@@ -8,11 +8,6 @@ import sys
 
 from . import __version__
 
-_FUTURE = {
-    "bot": "The messaging bot arrives in Phase 4.",
-}
-
-
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="jarvis", description="Jarvis assistant")
     parser.add_argument(
@@ -26,9 +21,8 @@ def _build_parser() -> argparse.ArgumentParser:
     sub.add_parser("cli", help="Typed chat (default).")
     sub.add_parser("voice", help="Hands-free voice assistant with wake word.")
     sub.add_parser("web", help="Browser chat UI (FastAPI).")
+    sub.add_parser("bot", help="Messaging bot (Telegram).")
     sub.add_parser("version", help="Print version.")
-    for name in _FUTURE:
-        sub.add_parser(name, help=_FUTURE[name])
 
     auto = sub.add_parser("autostart", help="Manage launch-at-login.")
     auto.add_argument("action", choices=["install", "uninstall", "status"])
@@ -48,10 +42,6 @@ def main(argv: list[str] | None = None) -> int:
         print(f"jarvis {__version__}")
         return 0
 
-    if command in _FUTURE:
-        print(_FUTURE[command])
-        return 0
-
     if command == "autostart":
         from .autostart import manager
 
@@ -68,6 +58,12 @@ def main(argv: list[str] | None = None) -> int:
         from .interfaces.web.server import run_web
 
         run_web(allow_power=args.allow_power)
+        return 0
+
+    if command == "bot":
+        from .interfaces.bot import run_bot
+
+        run_bot(allow_power=args.allow_power)
         return 0
 
     from .interfaces.cli import run_cli

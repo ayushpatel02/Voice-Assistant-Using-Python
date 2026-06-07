@@ -29,6 +29,12 @@ voice_name = "en-GB-RyanNeural"
 host = "127.0.0.1"
 port = 8765
 
+[bot]
+# Chat-platform face. Set the token in .env (TELEGRAM_BOT_TOKEN); optionally
+# restrict access with TELEGRAM_OWNER_ID so only you can talk to your bot.
+platform = "telegram"
+poll_timeout = 30
+
 [assistant]
 # The persona/system prompt seed. Keep it short; tools do the heavy lifting.
 name = "Jarvis"

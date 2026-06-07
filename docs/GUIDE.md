@@ -97,7 +97,8 @@ jarvis/
 ├── interfaces/   The faces.
 │   ├── cli.py         Typed chat.
 │   ├── voice_app.py   Hands-free voice app.
-│   └── web/           FastAPI server + React HUD (static/).
+│   ├── web/           FastAPI server + React HUD (static/).
+│   └── bot/           Chat bot: transport-agnostic engine + Telegram adapter.
 │
 ├── autostart/    Launch-at-login: systemd / launchd / Task Scheduler.
 └── config/       settings.py (typed) + defaults.toml (non-secret choices).
@@ -118,6 +119,7 @@ pip install -e '.[voice]'        # mic/speaker (also: portaudio system lib)
 jarvis            # typed CLI chat (default)
 jarvis web        # browser HUD at http://127.0.0.1:8765
 jarvis voice      # say "Jarvis", then speak
+jarvis bot        # Telegram bot (needs TELEGRAM_BOT_TOKEN in .env)
 jarvis autostart install         # boot with the machine, always listening
 jarvis --allow-power             # also permit shutdown/restart/logout
 ```
@@ -212,7 +214,22 @@ you can develop the whole thing on a machine with no microphone.
 - ✅ **Phase 1** — core brain, skill plugins, CLI, v1 skills.
 - ✅ **Phase 2** — voice (wake word + STT/TTS) and launch-at-login autostart.
 - ✅ **Phase 3** — web HUD (FastAPI + React, tool trace, browser voice).
-- ⏭ **Phase 4** — Telegram/Discord bot face (same core, new adapter).
+- ✅ **Phase 4** — Telegram bot face (same core, transport-agnostic engine).
+
+### Adding another chat platform (e.g. Discord)
+
+The bot face splits cleanly into a **transport-agnostic engine** and a
+**transport adapter**:
+
+- `interfaces/bot/engine.py` — `BotEngine` maps `(chat_id, text, user)` to a
+  reply via `Assistant.handle`, keeps one `Session` per chat, and handles the
+  `/help`, `/reset`, `/whoami` commands. No wire-format knowledge.
+- `interfaces/bot/telegram.py` — `TelegramBot` is the only part that knows
+  Telegram. Network is isolated to `_call`, so `process_update` (message →
+  reply) is unit-tested with no network.
+
+A Discord adapter is the same shape: receive a message, call
+`engine.handle_message(...)`, send the returned string. Reuse the engine as-is.
 
 To extend Jarvis you'll almost always be adding a **skill** (section 6) or a new
 **face** under `interfaces/` that calls `Assistant.handle`. The core rarely

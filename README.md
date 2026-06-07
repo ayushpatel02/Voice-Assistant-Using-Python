@@ -6,10 +6,10 @@ AI. An LLM understands what you ask in natural language and calls real **skills*
 swappable via config, and every interface (CLI, voice, web, bot) plugs into one
 shared core.
 
-> **Status:** Phases 1–3 complete — the core brain, skill-plugin system, a typed
+> **Status:** Phases 1–4 complete — the core brain, skill-plugin system, a typed
 > CLI, a hands-free **voice mode** (wake word "Jarvis" + STT/TTS) with
-> **launch-at-login autostart**, and a **browser HUD** (React + FastAPI, tool
-> trace, in-browser voice) are working. A messaging bot is next.
+> **launch-at-login autostart**, a **browser HUD** (React + FastAPI, tool trace,
+> in-browser voice), and a **Telegram bot** all run on the same core.
 >
 > 📖 New here? Read **[docs/GUIDE.md](docs/GUIDE.md)** — a guided tour of how it
 > all fits together and how to extend it.
@@ -70,6 +70,7 @@ JARVIS_LLM_PROVIDER=fake python -m jarvis
 jarvis                 # typed CLI chat (default)
 jarvis web             # browser HUD at http://127.0.0.1:8765
 jarvis voice           # hands-free: say "Jarvis", then speak your command
+jarvis bot             # Telegram bot (needs TELEGRAM_BOT_TOKEN)
 jarvis --allow-power   # also permit shutdown/restart/logout actions
 jarvis version
 ```
@@ -85,6 +86,19 @@ A dark **Iron-Man-style HUD**: a capabilities sidebar, a chat that shows 🔧
 **tool-trace chips** (so you can see which skills the brain invoked), a mic
 button for **in-browser voice** (Web Speech API), and a toggle to have replies
 spoken back. Built with React + JSX served straight from FastAPI — no build step.
+
+### Telegram bot
+
+```bash
+# 1. Create a bot with @BotFather, copy the token into .env:
+#    TELEGRAM_BOT_TOKEN=123:ABC
+#    (optional) TELEGRAM_OWNER_ID=...  -> only you can use it
+jarvis bot             # long-polls Telegram; message your bot
+```
+
+Reach Jarvis from your phone. Each chat keeps its own conversation memory, and
+`/help`, `/reset`, and `/whoami` are built in. The transport is pure standard
+library — no extra dependency beyond a bot token.
 
 ### Voice mode
 
@@ -138,7 +152,8 @@ and a `FakePlatform` stand in for the model and the OS.
   launch-at-login (systemd / launchd / Task Scheduler).
 - **Phase 3 — Web UI** ✅ React HUD over FastAPI: tool trace, capabilities
   sidebar, in-browser voice.
-- **Phase 4 — Messaging bot:** reach Jarvis from Telegram/Discord.
+- **Phase 4 — Messaging bot** ✅ Telegram face on the shared core
+  (per-chat memory, access control). A Discord adapter slots in the same way.
 
 ## Adding a skill
 
