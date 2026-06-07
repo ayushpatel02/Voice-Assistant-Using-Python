@@ -6,8 +6,9 @@ AI. An LLM understands what you ask in natural language and calls real **skills*
 swappable via config, and every interface (CLI, voice, web, bot) plugs into one
 shared core.
 
-> **Status:** Phase 1 complete — the core brain, skill-plugin system, and a typed
-> CLI are working. Voice, web UI, and a messaging bot are on the roadmap below.
+> **Status:** Phases 1–2 complete — the core brain, skill-plugin system, a typed
+> CLI, and a hands-free **voice mode** (wake word "Jarvis" + STT/TTS) with
+> **launch-at-login autostart** are working. Web UI and a messaging bot are next.
 
 ## Architecture: one core, many faces
 
@@ -63,8 +64,34 @@ JARVIS_LLM_PROVIDER=fake python -m jarvis
 
 ```bash
 jarvis                 # typed CLI chat (default)
+jarvis voice           # hands-free: say "Jarvis", then speak your command
 jarvis --allow-power   # also permit shutdown/restart/logout actions
 jarvis version
+```
+
+### Voice mode
+
+Install the voice extras (needs PortAudio on the system), then run `jarvis voice`:
+
+```bash
+pip install -e '.[voice]'      # sounddevice, faster-whisper, edge-tts, openWakeWord
+# Linux may need: sudo apt-get install portaudio19-dev
+jarvis voice
+```
+
+Say **"Jarvis"** to wake it, then speak. STT (faster-whisper), TTS (edge-tts),
+and the wake-word backend (openWakeWord; Porcupine optional) are all chosen in
+`jarvis/config/defaults.toml` and swappable — e.g. set `tts = "elevenlabs"` for
+a cinematic voice (with `ELEVENLABS_API_KEY`).
+
+### Auto-start at login
+
+Make Jarvis boot with your machine and always listen for "Jarvis":
+
+```bash
+jarvis autostart install     # systemd user service / launchd agent / Task Scheduler
+jarvis autostart status
+jarvis autostart uninstall
 ```
 
 ## Skills shipped in v1
@@ -90,9 +117,8 @@ and a `FakePlatform` stand in for the model and the OS.
 
 ## Roadmap
 
-- **Phase 2 — Voice + autostart:** wake word "Jarvis", STT (faster-whisper) + TTS
-  (edge-tts, ElevenLabs upgrade), and auto-start at login (systemd / launchd /
-  Task Scheduler).
+- **Phase 2 — Voice + autostart** ✅ wake word "Jarvis", pluggable STT/TTS, and
+  launch-at-login (systemd / launchd / Task Scheduler).
 - **Phase 3 — Web UI:** FastAPI chat (room for an Iron-Man-style HUD).
 - **Phase 4 — Messaging bot:** reach Jarvis from Telegram/Discord.
 

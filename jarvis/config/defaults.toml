@@ -19,6 +19,8 @@ disabled = []
 
 [voice]
 wake_word = "jarvis"
+# wakeword detector backend: "openwakeword" (default, free) or "porcupine" (key).
+wakeword = "openwakeword"
 stt = "faster_whisper"
 tts = "edge_tts"
 voice_name = "en-GB-RyanNeural"

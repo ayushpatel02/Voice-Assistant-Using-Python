@@ -40,6 +40,7 @@ class SkillsSettings(BaseModel):
 
 class VoiceSettings(BaseModel):
     wake_word: str = "jarvis"
+    wakeword: str = "openwakeword"  # detector backend
     stt: str = "faster_whisper"
     tts: str = "edge_tts"
     voice_name: str = "en-GB-RyanNeural"
