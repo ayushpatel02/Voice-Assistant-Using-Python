@@ -9,7 +9,6 @@ import sys
 from . import __version__
 
 _FUTURE = {
-    "web": "The web UI arrives in Phase 3.",
     "bot": "The messaging bot arrives in Phase 4.",
 }
 
@@ -26,6 +25,7 @@ def _build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command")
     sub.add_parser("cli", help="Typed chat (default).")
     sub.add_parser("voice", help="Hands-free voice assistant with wake word.")
+    sub.add_parser("web", help="Browser chat UI (FastAPI).")
     sub.add_parser("version", help="Print version.")
     for name in _FUTURE:
         sub.add_parser(name, help=_FUTURE[name])
@@ -62,6 +62,12 @@ def main(argv: list[str] | None = None) -> int:
         from .interfaces.voice_app import run_voice
 
         run_voice(allow_power=args.allow_power)
+        return 0
+
+    if command == "web":
+        from .interfaces.web.server import run_web
+
+        run_web(allow_power=args.allow_power)
         return 0
 
     from .interfaces.cli import run_cli

@@ -41,6 +41,7 @@ class Router:
         session.memory.add_user(text)
 
         final_text = ""
+        tools_used: list[str] = []
         for _ in range(self.max_iterations):
             result = self.llm.complete(working, tools or None)
 
@@ -56,6 +57,7 @@ class Router:
                 )
             )
             for call in result.tool_calls:
+                tools_used.append(call.name)
                 output = self._run_tool(call, context)
                 working.append(
                     Message(
@@ -70,7 +72,7 @@ class Router:
             final_text = final_text or "I got stuck working on that. Could you rephrase?"
 
         session.memory.add_assistant(final_text)
-        return Response(text=final_text)
+        return Response(text=final_text, meta={"tools_used": tools_used})
 
     def _run_tool(self, call: ToolCall, context: Context) -> str:
         log.info("Tool call: %s(%s)", call.name, call.arguments)
