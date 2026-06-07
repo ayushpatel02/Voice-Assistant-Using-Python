@@ -1,64 +1,103 @@
-# Voice-Assistant-Using-Python
+# Jarvis — Cross-Platform LLM Voice + Chat Assistant
 
-Jarvis is a Python-based voice assistant that listens for spoken commands,
-converts speech to text, and performs desktop tasks such as launching
-applications, opening websites, reading Wikipedia summaries, telling the
-time, and sending email — replying back with a synthesized voice.
+Jarvis is a modular, provider-agnostic AI assistant in the spirit of Tony Stark's
+AI. An LLM understands what you ask in natural language and calls real **skills**
+(tools) to get things done. The brain, the voice stack, and the OS layer are all
+swappable via config, and every interface (CLI, voice, web, bot) plugs into one
+shared core.
 
-## Features
+> **Status:** Phase 1 complete — the core brain, skill-plugin system, and a typed
+> CLI are working. Voice, web UI, and a messaging bot are on the roadmap below.
 
-- Time-aware greeting (morning / afternoon / evening)
-- Speech-to-text command recognition (Google Speech Recognition)
-- Text-to-speech responses (`pyttsx3`)
-- Wikipedia summaries
-- Open websites (YouTube, Google, Coursera, ChatGPT)
-- Tell the current time
-- Send email to yourself
-- Power controls (shutdown / restart / logout)
+## Architecture: one core, many faces
 
-## Requirements
-
-- Python 3.8+
-- A working microphone
-- The packages in `requirements.txt`
-
-Install dependencies:
-
-```bash
-pip install -r requirements.txt
+```
+interfaces (cli · voice · web · bot)   ← thin adapters, just I/O
+            │  call Assistant.handle(text) → Response
+            ▼
+core  (assistant · router · memory · session)
+            │  router runs the LLM tool-call loop
+   ┌────────┼─────────────┐
+   ▼        ▼             ▼
+ llm/     skills/      services/        platform/
+(LiteLLM, (auto-       (sqlite store,   (Windows /
+ swappable)discovered  scheduler,       macOS /
+           plugins)    http)            Linux)
 ```
 
-> **Note:** `PyAudio` may require system audio libraries (e.g. `portaudio`).
-> On some platforms you may need to install those first.
+- **LLM-as-router, Python-as-executor:** the model only decides *which* tool to
+  call with *what* arguments; deterministic Python does the work.
+- **Provider-agnostic brain:** via [LiteLLM](https://docs.litellm.ai), the same
+  code talks to Claude, OpenAI, Ollama, or a local model — chosen in config.
+- **Skills are one-file drop-ins:** subclass `Skill` anywhere under
+  `jarvis/skills/` and it's auto-discovered and exposed to the model.
+- **Secrets only from the environment** (`.env`), never in code or config.
 
-## Configuration
-
-Email credentials are read from environment variables — **no secrets are
-stored in the source code**. For Gmail, create an
-[App Password](https://support.google.com/accounts/answer/185833) and set:
-
-```bash
-export JARVIS_EMAIL="you@gmail.com"
-export JARVIS_EMAIL_PASSWORD="your-app-password"
-```
-
-## Usage
+## Install
 
 ```bash
-python jarvis.py
+python -m pip install -e '.[full]'     # core + all v1 skills + LiteLLM
+# or a minimal dev install:
+python -m pip install -e '.[dev]'
 ```
 
-Then speak commands such as:
+Optional extras: `llm`, `knowledge`, `productivity`, `system`, `comms`, `voice`,
+`web`, `bots`.
 
-- "wikipedia <topic>"
-- "open youtube" / "open google" / "open coursera" / "chatgpt"
-- "what's the time"
-- "send email to me"
-- "shutdown" / "restart" / "logout"
-- "stop" to quit
+## Configure
 
-## Platform notes
+1. Copy `.env.example` to `.env` and fill in the keys you want (LLM provider key,
+   and any skill keys like `OPENWEATHER_API_KEY`). For email, use a Gmail
+   **App Password**, not your account password.
+2. Non-secret choices (which model, voice, enabled skills) live in
+   `jarvis/config/defaults.toml`. Override any value with a `JARVIS_*` env var,
+   e.g. `JARVIS_LLM_MODEL=gpt-4o`, or point `JARVIS_CONFIG` at your own TOML file.
 
-Application launching and power commands use Windows APIs
-(`os.startfile`, `shutdown`). These features are Windows-oriented; the
-voice, speech, web, and Wikipedia features are cross-platform.
+No API key handy? Run with the offline echo brain to try the plumbing:
+
+```bash
+JARVIS_LLM_PROVIDER=fake python -m jarvis
+```
+
+## Run
+
+```bash
+jarvis                 # typed CLI chat (default)
+jarvis --allow-power   # also permit shutdown/restart/logout actions
+jarvis version
+```
+
+## Skills shipped in v1
+
+| Area | Tools |
+|---|---|
+| Knowledge & web | `get_time`, `get_date`, `wikipedia_summary`, `web_search`, `get_weather`*, `get_news`* |
+| Productivity | `add_note`, `list_notes`, `clear_notes`, `add_reminder`, `list_reminders`, `set_timer` |
+| System control | `open_app`, `open_website`, `set_volume`, `set_brightness`, `shutdown_computer`†, `restart_computer`†, `logout`† |
+| Comms & media | `send_email`*, `play_music` |
+
+\* needs an API key/credentials (auto-disabled until configured).
+† disabled unless you pass `--allow-power`.
+
+## Test
+
+```bash
+python -m pytest
+```
+
+The suite runs with no network, no microphone, and no API keys — a `ScriptedLLMProvider`
+and a `FakePlatform` stand in for the model and the OS.
+
+## Roadmap
+
+- **Phase 2 — Voice + autostart:** wake word "Jarvis", STT (faster-whisper) + TTS
+  (edge-tts, ElevenLabs upgrade), and auto-start at login (systemd / launchd /
+  Task Scheduler).
+- **Phase 3 — Web UI:** FastAPI chat (room for an Iron-Man-style HUD).
+- **Phase 4 — Messaging bot:** reach Jarvis from Telegram/Discord.
+
+## Adding a skill
+
+Create a file under `jarvis/skills/<area>/` with a `Skill` subclass that returns
+`Tool`s from `tools()`. That's it — no registration step. See
+`jarvis/skills/knowledge/datetime_skill.py` for the smallest example.

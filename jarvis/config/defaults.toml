@@ -1,0 +1,36 @@
+# Default (non-secret) configuration choices for Jarvis.
+# Override any value with a user config file (set JARVIS_CONFIG=/path/to.toml)
+# or with environment variables (e.g. JARVIS_LLM_MODEL=gpt-4o).
+# Secrets/keys never go here — they live in `.env`.
+
+[llm]
+# provider: "litellm" (default, talks to Claude/OpenAI/Ollama/local) or "fake"
+# (offline echo provider used for tests and key-less smoke runs).
+provider = "litellm"
+model = "claude-sonnet-4-5"
+temperature = 0.7
+max_tool_iterations = 6
+
+[skills]
+# enabled = []  -> all discovered skills are enabled.
+# Otherwise, only the listed skill names are enabled.
+enabled = []
+disabled = []
+
+[voice]
+wake_word = "jarvis"
+stt = "faster_whisper"
+tts = "edge_tts"
+voice_name = "en-GB-RyanNeural"
+
+[web]
+host = "127.0.0.1"
+port = 8765
+
+[assistant]
+# The persona/system prompt seed. Keep it short; tools do the heavy lifting.
+name = "Jarvis"
+persona = """You are Jarvis, a witty, concise, and highly capable personal \
+assistant in the spirit of Tony Stark's AI. Address the user as "Boss". \
+Be helpful and direct. When an action is needed, use the available tools \
+rather than guessing. Keep spoken replies short and natural."""
